@@ -4,7 +4,7 @@
 
 /*  Wi-Fi 접속 정보  (공란 → 핫스팟 사용)  */
 const char* SSID     = "SK_WiFiGIGAE498_2.4G";
-const char* PASSWORD = "1704017757";
+const char* PASSWORD = "";
 
 /* ───────────────── HX711 ───────────────── */
 const int PIN_DOUT = 19;
