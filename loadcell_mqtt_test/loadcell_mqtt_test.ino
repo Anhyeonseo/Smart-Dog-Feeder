@@ -5,13 +5,13 @@
 
 // 1. Wi-Fi 설정
 const char* ssid          = "SK_WiFiGIGAE498";
-const char* wifi_password = "1704017757";
+const char* wifi_password = ""; // 설정해주세요
 
 // 2. HiveMQ Cloud 접속 정보
 const char* mqtt_server = "58870451efe34c9f83dece69cbf72f38.s1.eu.hivemq.cloud";
 const int   mqtt_port   = 8883;               // TLS 포트
 const char* mqtt_user   = "feeder01";         // Access Management에서 만든 ID
-const char* mqtt_pass   = "Zxasqwgg248~";     // 그 비밀번호
+const char* mqtt_pass   = "";     // 비밀번호 카톡 참고
 
 // 3. 로드셀 핀 및 객체
 const int PIN_DOUT = 19;   // DT
