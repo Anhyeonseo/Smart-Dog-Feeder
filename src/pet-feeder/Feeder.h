@@ -1,26 +1,24 @@
 // ─────────────────────────────────────────────────────────────────────────
-// File: WeightSensor.h
+// File: Feeder.h
 // ─────────────────────────────────────────────────────────────────────────
-#ifndef WEIGHT_SENSOR_H
-#define WEIGHT_SENSOR_H
+#ifndef FEEDER_H
+#define FEEDER_H
 
 #include <Arduino.h>
-#include <HX711.h>
+#include "WeightSensor.h"
 
-class WeightSensor {
+class Feeder {
 public:
-	// 생성자에서 핀과 교정 인자 설정
-	WeightSensor(uint8_t doutPin, uint8_t sckPin, float calFactor);
+	// 생성자에서 DC 모터 제어 핀과 타임아웃(ms) 설정
+	Feeder(uint8_t motorPin, unsigned long timeoutMs);
 	// setup() 안에서 호출
 	void begin();
-	// 샘플 수 지정하여 평균 무게(그램) 반환
-	float getWeightAvg(uint8_t samples = 10);
+	// 목표 사료량(g)과 센서 참조를 넘겨서 배출
+	void dispense(float targetGrams, WeightSensor& sensor);
 
 private:
-	HX711   scale;
-	uint8_t pinDout;
-	uint8_t pinSck;
-	float   calibrationFactor;
+	uint8_t       motorPin;
+	unsigned long maxRunMs;
 };
 
-#endif // WEIGHT_SENSOR_H
+#endif // FEEDER_H

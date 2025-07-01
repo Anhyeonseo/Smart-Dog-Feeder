@@ -11,9 +11,7 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);
 Servo doorServo;
 
 // 등록된 RFID 태그 ID
-const String list[] = {
-  "6c 1e b2 01" // 파란색 키링
-};
+const String list[] = {"6c 1e b2 01" }
 
 bool isInlist(String id) {
   for (int i = 0; i < sizeof(list) / sizeof(list[0]); i++) {
@@ -24,7 +22,7 @@ bool isInlist(String id) {
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("Serial Start");
+  Serial.println("Serial Start"); 
 
   SPI.begin(18, 19, 23, SS_PIN); 
   mfrc522.PCD_Init();
