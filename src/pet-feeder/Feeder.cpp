@@ -17,7 +17,7 @@ void Feeder::dispense(float targetGrams, WeightSensor& sensor) {
     unsigned long startTime = millis();
     digitalWrite(motorPin, HIGH);
 
-    while (millis() - startTime < maxRunMs) {
+    while (millis() - startTime < maxRunMs) { //maxRunMs은 최대 실행 시간을 설정한거님
         float currentWeight = sensor.getWeightAvg();
         float dispensed = currentWeight - startWeight;
         Serial.printf("  진행: %.1f g / %.1f g\r", dispensed, targetGrams);

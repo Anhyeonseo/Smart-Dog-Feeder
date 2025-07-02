@@ -1,24 +1,22 @@
 #include "Rfid.h"
 
-RFID::RFID() 
-    : reader_(Config::RFID::RFID_SS_PIN, Config::RFID::RFID_RST_PIN) {}
+RFID::RFID(uint8_t ssPin, uint8_t rstPin, uint8_t servoPin, const String& AUTH_ID) 
+    : reader_(ssPin, rstPin), ssPin_(ssPin), rstPin_(rstPin), servoPin_(servoPin), AUTH_TAG(AUTH_ID) {}
 
 void RFID::begin() {
     SPI.begin(                 
         Config::RFID::RFID_SCK_PIN,
         Config::RFID::RFID_MISO_PIN,
         Config::RFID::RFID_MOSI_PIN,
-        Config::RFID::RFID_SS_PIN
+        ssPin_
     );
     reader_.PCD_Init();
-    doorServo_.attach(Config::RFID::RFID_SERVO_PIN);
+    doorServo_.attach(servoPin_);
     doorServo_.write(0);  // 서보 초기 위치
 } 
 
 bool RFID::IsInList(const String& id) {
-        for (size_t i = 0; i < Config::RFID::AUTH_TAG_COUNT; i++) {
-            if (id == Config::RFID::AUTH_TAGS[i]) return true;
-        }
+        if (id == AUTH_TAG) return true;
         return false;
 }
 
