@@ -16,7 +16,7 @@
 
 // unitTask 객체의 begin() 함수를 호출하여 초기화. begin()에서는 먼저 각 기능 class의 객체 생성 및 연결된 배식통의 핀 번호를 설정하고, 
 // WIfi, RFID리더, 서보 모터, 로드셀, DC모터등을 초기화
-// unitTask 객체 멤버함수로 각 기능 통합
+// unitTask 객체 0멤버함수로 각 기능 통합
 // 1. 앱에서 데이터 가져와서 config.h에 저장. 서버에 데이터 변경될때마다 동기화 해줘야함.
 // 2. 예약 시간에 배식 기능 수행 if 사료가 남아 있는 경우 해당 무게 특정 하여 배식량 조절
 // 3. 리더기 활성화 및 RFID 태그 인식시 서보모터로 배식통 열기
@@ -31,11 +31,11 @@ class UnitTask {
 public:
     UnitTask(
         uint8_t doutPin, uint8_t sckPin, float calFactor,
-        uint8_t motorPin, unsigned long timeoutMs,
+        uint8_t stepPin, uint8_t dirPin, uint8_t enPin, unsigned long timeoutMs,
         uint8_t ssPin, uint8_t rstPin, uint8_t servoPin, const String& AUTH_ID       
     )
     :   scale(doutPin, sckPin, calFactor),
-        feeder(motorPin, timeoutMs),
+        feeder(stepPin, dirPin, enPin, timeoutMs),
         rfid(ssPin, rstPin, servoPin, AUTH_ID) {}
     
     ~UnitTask() {
@@ -81,19 +81,23 @@ public:
     void run(tm& current_Time) {
         for (int i = 0; i < taskCount; i++) {
             if (taskDone[i]) continue; // 이미 완료된 작업은 건너뜀 
-            if (current_Time.tm_hour == tasks[i].hour && current_Time.tm_min == tasks[i].minute) {
+          //  if (current_Time.tm_hour == tasks[i].hour && current_Time.tm_min == tasks[i].minute) {
                 feeder.dispense(tasks[i].target_g, scale); // 목표 사료량 배식
                 
-                while (scale.getWeightAvg() <= 0.5) {
+                while (scale.getWeightAvg() >= 0.5) {
                     // 로드셀로 무게 확인, 0.5g 이하일 때까지 대기
                     rfid.scan(); // RFID 리더 활성화 5초 이상 tag가 인식되지 않으면 자동으로 종료
                     delay(50); // 50ms 대기 후 다시 확인
                     // 여기서 잔량 확인 및 서버 알림 로직 추가하면 될듯, 아직 잔량 반영하는 로직은 적용안함       
                 }
                 taskDone[i] = true; // 작업 완료 표시
-            }
+
+
+           // }
         }
     }
+
+
 
 void resetTasks(tm& current_Time) {
     // 현재 시간이 00:00시가 되면 모든 작업을 초기화
