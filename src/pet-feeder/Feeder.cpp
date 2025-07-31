@@ -5,7 +5,7 @@
 
 
 Feeder::Feeder(uint8_t stepPin, uint8_t dirPin, uint8_t enPin, unsigned long timeoutMs)
-    : stepPin(stepPin), dirPin(dirPin), enPin(enPin) maxRunMs(timeoutMs),
+    : stepPin(stepPin), dirPin(dirPin), enPin(enPin), maxRunMs(timeoutMs),
       stepper(AccelStepper::DRIVER, stepPin, dirPin) {}
 
 void Feeder::begin() {
@@ -15,7 +15,7 @@ void Feeder::begin() {
     digitalWrite(enPin, LOW); // 모터 활성화
     pinMode(dirPin, OUTPUT);
     digitalWrite(dirPin, HIGH); // 회전 방향 설정 (필요 시 LOW로 바꿔보세요)
-    Serial.println("🌀 스텝모터 준비 완료");
+    Serial.println("스텝모터 준비 완료");
 
 }
 

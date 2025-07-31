@@ -13,7 +13,7 @@ public:
     void begin();
     bool IsInList(const String& id);
     String convertUidToString();
-    void scan();
+    bool scan();
 
 private:
     MFRC522 reader_;
