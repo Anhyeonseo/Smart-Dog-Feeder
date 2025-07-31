@@ -35,9 +35,12 @@ void Feeder::dispense(float targetGrams, WeightSensor& sensor) {
     const int baseStepSize = 200;     // 기본 배치 스텝 수
     const float threshold = 10;     // 목표까지 1g 이하로 남으면 정밀 모드
 
+
     while (millis() - startTime < maxRunMs) { //maxRunMs은 최대 실행 시간을 설정한거님
         // 배치 크기 결정 (가까워질수록 작게)
         int stepBatch = (targetGrams - dispensed > threshold) ? baseStepSize : 50;
+
+        float beforeWeight = sensor.getWeightAvg();
 
         stepper.move(stepBatch);
         stepper.runToPosition(); // batch만큼 회전
@@ -45,6 +48,14 @@ void Feeder::dispense(float targetGrams, WeightSensor& sensor) {
         // 현재 무게 측정
         currentWeight = sensor.getWeightAvg();
         dispensed = currentWeight - startWeight; // 배출된 무게 계산
+        
+        // 사료 걸림 감지 (한 번 회전 후 변화량이 0.3g 이하일 때 반대 회전)
+        if (abs(currentWeight - beforeWeight) < 0.3) {
+            Serial.println("⚠️ 사료 걸림 감지! 반대 회전 중...");
+            stepper.move(-stepBatch); // 반대 방향으로 회전
+            stepper.runToPosition();
+            // 필요시 continue; // 다음 루프로
+        }
         
         Serial.printf("  진행: %.1f g / %.1f g\r \n", dispensed, targetGrams);
         if (dispensed >= targetGrams) break;

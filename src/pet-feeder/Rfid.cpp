@@ -64,3 +64,6 @@ void RFID::scan() {
         doorOpen = false;
     }
 }
+
+// refactoring : static 지역 변수 대신 멤버 변수로 doorOpen과 closetime을 사용하여
+//               객체 상태를 유지하도록 변경
