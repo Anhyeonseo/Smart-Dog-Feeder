@@ -30,7 +30,7 @@ String RFID::convertUidToString() {
     return uidStr;
 }
   
-void RFID::scan() {
+bool RFID::scan() {
     static bool doorOpen = false;
     static unsigned long closetime = 0;
     // ❶ 태그가 감지되고 UID 읽기에 성공하면…
@@ -52,7 +52,7 @@ void RFID::scan() {
             // ❸ 여기서 return; 하므로 밑의 “닫기” 코드는 절대 실행 안 됨
             closetime = millis() + 5000;  // 5초 후에 닫기
             reader_.PICC_HaltA();
-            return;
+            return false; // 문이 열렸지만, 닫힌 것은 아니므로 false 반환
         }
     }
 
@@ -62,8 +62,11 @@ void RFID::scan() {
         doorServo_.write(0);
         // doorServo.detach();
         doorOpen = false;
+        return true; // 문이 방금 닫혔으므로 true 반환
     }
+    
+    return false; // 그 외의 경우는 모두 false 반환
 }
 
-// refactoring : static 지역 변수 대신 멤버 변수로 doorOpen과 closetime을 사용하여
+// ref과actoring : static 지역 변수 대신 멤버 변수로 doorOpen closetime을 사용하여
 //               객체 상태를 유지하도록 변경
