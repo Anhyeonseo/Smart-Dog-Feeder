@@ -3,12 +3,14 @@
 #include "Unit_task.h"
 #include "config.h"
 #include "MqttHandler.h" // MQTT 핸들러 포함
+// #include <Preferences.h> // 더미 데이터 삭제시 객체 생성 위해
 
 // 급식시간 설정
 // struct FeedTask { uint8_t hour, minute; float target_g; };
 // FeedTask tasks[] = { {8,0,120},{18,30,80} };
 // bool task_done[sizeof(tasks) / sizeof(tasks[0])] = { false };
 
+// Preferences      preferences; // 더미 데이터 삭제시 객체 생성 위해
 
 UnitTask Unit(
     FirstUnit::WEIGHT_DOUT_PIN, FirstUnit::WEIGHT_SCK_PIN, FirstUnit::WEIGHT_CAL_FACTOR,
