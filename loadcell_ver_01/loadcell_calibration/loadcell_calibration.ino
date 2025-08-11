@@ -11,8 +11,8 @@
  ***************************************************************************/
 #include "HX711.h"
 
-const int PIN_DOUT = 19;   // DT
-const int PIN_SCK  = 18;   // SCK
+const int PIN_DOUT = 4;   // DT
+const int PIN_SCK  = 15;   // SCK
 
 HX711 scale; // scale 객체 생성
 float calibration_factor = 1.0;   // 첫 실행 땐 1.0 (자동 계산됨)
@@ -67,6 +67,8 @@ void loop() {
   float weight = scale.get_units(10);   // 10회 평균
   Serial.print("Weight: ");
   Serial.print(weight, 2);
+  Serial.print("DEBUG RAW read = ");
+  Serial.println(scale.read());
   Serial.println(" g");
   delay(500);
 }

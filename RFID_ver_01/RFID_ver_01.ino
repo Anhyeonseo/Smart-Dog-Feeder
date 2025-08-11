@@ -4,14 +4,14 @@
 
 // 핀 정의
 #define SS_PIN     5       // RC522 SDA
-#define RST_PIN    22      // RC522 RST
-#define SERVO_PIN  13      // 서보모터
+#define RST_PIN    17      // RC522 RST
+#define SERVO_PIN  16      // 서보모터
 
 MFRC522 mfrc522(SS_PIN, RST_PIN);
 Servo doorServo;
 
 // 등록된 RFID 태그 ID
-const String list[] = {"6c 1e b2 01" }
+const String list[] = {"6c 1e b2 01" };
 
 bool isInlist(String id) {
   for (int i = 0; i < sizeof(list) / sizeof(list[0]); i++) {
