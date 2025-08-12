@@ -8,7 +8,6 @@
 
 class RFID {
 public:
-    RFID();
     RFID(uint8_t ssPin, uint8_t rstPin, uint8_t servoPin, const String& AUTH_ID); // 이놈들은 핀번호 인스턴스마다 다르게 해야함
     void begin();
     bool IsInList(const String& id);
@@ -20,6 +19,14 @@ private:
     Servo   doorServo_;
     uint8_t ssPin_, rstPin_, servoPin_; 
     const String AUTH_TAG; // 승인된 RFID 태그 ID
+
+    // 상태 머신 멤버
+    enum Doorstate { CLOSED, OPEN, CLOSING };
+    Doorstate doorState_;
+    int doorAngle_;
+    unsigned long lastStepTime_;
+    const unsigned long stepInterval_ = 30;
+    unsigned long closetime_;
 };
 #endif
 

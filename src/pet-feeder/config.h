@@ -31,6 +31,10 @@ namespace Config { //공통 사용 설정
         static constexpr uint8_t RFID_MISO_PIN  = 19;
         static constexpr uint8_t RFID_MOSI_PIN  = 23;
     }
+
+    namespace FEEDER {
+        static constexpr float R_SENSE = 0.11f; // TMC2209 PCB 내부 저항
+    }
 }
 
 namespace FirstUnit {
