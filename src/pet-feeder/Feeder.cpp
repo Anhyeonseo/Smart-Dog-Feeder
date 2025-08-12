@@ -36,7 +36,7 @@ void Feeder::dispense(float targetGrams, WeightSensor& sensor) {
     float dispensed = 0;
     const float stopMargin = 0.5; // ±0.5g 허용
 
-    const int baseStepSize = 400;     // 기본 배치 스텝 수
+    const int baseStepSize = 600;     // 기본 배치 스텝 수
     const float threshold = 10;     // 목표까지 1g 이하로 남으면 정밀 모드
 
 

@@ -35,6 +35,13 @@ public:
      * setup() 함수에서 한 번 호출됩니다.
      */
     void begin();
+
+    /**
+     * @brief 테스트용 함수로, 지정된 양만큼 즉시 배식하고 RFID 문 개폐를 시뮬레이션합니다.
+     * 실제 급식 사이클(배식 -> 모니터링 -> 완료)을 테스트할 때 사용합니다.
+     * @param amount 배식할 사료의 양 (그램 단위)
+     */
+    void testDispense(float amount);
     
     /**
      * @brief MQTT 핸들러로부터 받은 JSON 형식의 스케줄 목록 문자열을 해석합니다.

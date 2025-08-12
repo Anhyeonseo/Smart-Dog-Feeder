@@ -53,6 +53,9 @@ void loop() {
         Unit.setTasksFromJson(getSchedulesJson());
     }
 
+    // --- [추가] 시리얼 테스트 입력 처리 ---
+    handleSerialTest();
+
     struct tm now;
     if (!getLocalTime(&now)) { delay(1000); return; }
     // 현재 시간 출력
@@ -71,4 +74,35 @@ void loop() {
 
     Unit.resetTasks(now); // 하루가 지나면 작업 초기화
     delay(1000); // 1초 대기 후 다시 실행
+}
+
+/**
+ * @brief 시리얼 모니터 입력을 받아 즉시 급식 테스트를 수행하는 함수
+ */
+void handleSerialTest() {
+    if (Serial.available() > 0) {
+        String input = Serial.readStringUntil('\n');
+        input.trim(); // 앞뒤 공백 제거
+
+        if (input.equalsIgnoreCase("TEST")) {
+            Serial.println("▶ 즉시 급식 테스트를 시작합니다.");
+            Serial.print("▷ 급식할 양(g)을 입력하고 Enter를 누르세요: ");
+
+            // 사용자가 양을 입력할 때까지 대기
+            while (Serial.available() == 0) {
+                delay(100); // CPU 자원을 너무 많이 사용하지 않도록 잠시 대기
+            }
+
+            String amountStr = Serial.readStringUntil('\n');
+            amountStr.trim();
+            float amount = amountStr.toFloat();
+
+            if (amount > 0) {
+                Unit.testDispense(amount); // UnitTask의 테스트 함수 호출
+                Serial.println("▶ 테스트 완료. 정상 작동 모드로 돌아갑니다.");
+            } else {
+                Serial.println("[오류] 잘못된 입력입니다. 0보다 큰 숫자를 입력하세요.");
+            }
+        }
+    }
 }

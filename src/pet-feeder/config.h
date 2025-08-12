@@ -10,8 +10,8 @@ struct FeedTask {
 
 namespace Config { //공통 사용 설정
     namespace WIFI {
-        static const char* SSID     = "SK_WiFiGIGAE498_2.4G";       // WiFi SSID
-        static const char* PASSWORD = "1704017757";   // WiFi 비밀번호
+        static const char* SSID     = "U+NetCB58";       // WiFi SSID
+        static const char* PASSWORD = "89@77PE259";   // WiFi 비밀번호
     }
 
     // --- MQTT 설정 추가 ---

@@ -22,6 +22,38 @@ void UnitTask::begin() {
     rfid.begin();
 }
 
+/**
+ * @brief 지정된 양만큼 즉시 배식하고, RFID 문 개폐까지 테스트하는 함수.
+ * 실제 급식 사이클(배식 -> 모니터링 -> 완료)을 시뮬레이션합니다.
+ * @param amount 배식할 사료의 양 (g)
+ */
+void UnitTask::testDispense(float amount) {
+    // 1. 테스트 시작 메시지 출력
+    Serial.printf("\n--- 즉시 급식 테스트 (목표: %.1fg) ---\n", amount);
+
+    // 2. 배식 단계 (run() 함수의 DISPENSING 상태와 동일)
+    feeder.dispense(amount, scale);
+    Serial.println("배식 완료. 식사 모니터링(RFID 문 개폐) 시뮬레이션을 시작합니다.");
+    Serial.println("인증된 RFID 태그를 리더기에 접촉하여 문을 열어주세요...");
+
+    // 3. 모니터링 단계 (run() 함수의 MONITORING 상태 시뮬레이션)
+    // rfid.scan()이 true(문이 닫힘)를 반환할 때까지 반복합니다.
+    while (true) {
+        bool mealFinished = rfid.scan();
+        if (mealFinished) {
+            Serial.println("식사 완료 감지 (문 닫힘).");
+            break; // 모니터링 루프 종료
+        }
+        delay(50); // 루프가 너무 빠르게 도는 것을 방지
+    }
+
+    // 4. 완료 및 결과 보고 단계
+    float finalWeight = scale.getWeightAvg(); // 최종 잔량 측정
+    Serial.printf("테스트 완료. 최종 측정된 잔량: %.1fg\n", finalWeight);
+    Serial.println("--------------------------------------\n");
+}
+
+
 // --- MQTT로부터 받은 JSON으로 스케줄을 설정하는 함수 ---
 void UnitTask::setTasksFromJson(String json) {
     StaticJsonDocument<1024> doc;
