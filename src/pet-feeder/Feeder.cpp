@@ -109,7 +109,7 @@ void Feeder::update(WeightSensor& sensor) {
              
                 // 2. 사료 걸림 감지 로직 (무게 변화량 기반)
                 // dispensedAmount가 0보다 클 때만 (초반 오류 방지)
-                if (dispensedAmount > 0 && abs(dispensedAmount - beforeDispensed) < 0) {
+                if (dispensedAmount > 0 && abs(dispensedAmount - beforeDispensed) < 0.1) {
                     Serial.println("\nFeeder: 사료 걸림 감지! 반대 회전 실행...");
                     currentState = REVERSING;
                     // 1. 현재 움직임을 멈추고 감속을 시작하도록 명령
