@@ -18,6 +18,8 @@ UnitTask Unit(
     FirstUnit::RFID_SS_PIN, FirstUnit::RFID_RST_PIN, FirstUnit::RFID_SERVO_PIN, FirstUnit::AUTH_TAG
 );
 
+unsigned long lastSecondTaskTime = 0;
+
 void setup() {
     Serial.begin(115200); // 디버깅을 위한 시리얼 통신 초기화
 
@@ -25,8 +27,6 @@ void setup() {
     // preferences.clear(); // "feeder_settings" 공간의 모든 데이터를 삭제합니다.
     // preferences.end();
     // Serial.println("\n!!! 내부 메모리(Preferences)가 초기화되었습니다. !!!\n");
-
-    Unit.begin(); // UnitTask 객체 초기화
 
     WiFi.begin(Config::WIFI::SSID, Config::WIFI::PASSWORD); // WiFi 연결
     
@@ -38,6 +38,7 @@ void setup() {
 
     configTime(9 * 3600, 0, "pool.ntp.org"); // NTP 서버 설정
 
+    Unit.begin(); // UnitTask 객체 초기화
     setupMqtt(); // MQTT 핸들러 초기화
 
     // 부팅 시 Preferences에 저장된 스케줄로 UnitTask 설정
@@ -45,63 +46,76 @@ void setup() {
 }
 
 void loop() {
+    //  매 루프마다 항상, 그리고 최대한 빠르게 실행되어야 하는 함수들
+    
+    // 1. mQTT 연결 유지 및 메시지 수신 
     loopMqtt(); // MQTT 연결 유지 및 메시지 수신
 
-    // 앱에서 스케줄을 변경했는지 확인
-    if (isScheduleUpdated()) {
-        Serial.println("MQTT로 스케줄 업데이트 감지. UnitTask에 적용합니다.");
-        Unit.setTasksFromJson(getSchedulesJson());
-    }
+    // 2. 수신된 MQTT 메시지 처리 (필요시에만 동작)
+    handleMqttMessages();
 
-    // --- [추가] 시리얼 테스트 입력 처리 ---
-    handleSerialTest();
-
+    // 3. unitTask의 상태 업데이트
     struct tm now;
-    if (!getLocalTime(&now)) { delay(1000); return; }
-    // 현재 시간 출력
-    // Serial.printf("현재 시간: %02d:%02d:%02d\n", now.tm_hour, now.tm_min, now.tm_sec);
-
-    Unit.run(now);
-
-    // UnitTask가 급식을 완료했는지 확인하고 서버에 보고
-    if (Unit.isMealCompleted()) {
-        long id = Unit.getCompletedTaskId();
-        float weight = Unit.getRemainingWeight();
-        Serial.printf("급식 완료 감지 (ID: %ld). 서버에 상태 보고...\n", id);
-        
-        sendMealStatus(id, weight);
+    if (getLocalTime(&now)) {
+        Unit.update(now);
     }
 
-    Unit.resetTasks(now); // 하루가 지나면 작업 초기화
-    delay(1000); // 1초 대기 후 다시 실행
+    // 주기적으로 실행되어야하는 함수들 
+
+    if (millis() - lastSecondTaskTime >= 1000) {
+        lastSecondTaskTime = millis();
+
+        // 1. MQTT로 스케줄 업데이트가 있었는지 확인
+        if (isScheduleUpdated()) {
+            Serial.println("MQTT로 스케줄 업데이트 감지. UnitTask에 적용합니다.");
+            Unit.setTasksFromJson(getSchedulesJson());
+        }
+
+        // 2. 식사 완료 보고
+        if (Unit.isMealCompleted()) {
+            long id = Unit.getCompletedTaskId();
+            float weight = Unit.getRemainingWeight();
+            Serial.printf("급식 완료 감지 (ID: %ld). 서버에 상태 보고...\n", id);
+            sendMealStatus(id, weight);
+        }
+
+        // 3. 자정 작업 초기화
+        Unit.resetTasks(now);
+    }
+
+    // --- 시리얼 테스트 입력 처리 ---
+    handleSerialTest();
 }
+
 
 /**
  * @brief 시리얼 모니터 입력을 받아 즉시 급식 테스트를 수행하는 함수
  */
 void handleSerialTest() {
+    static String inputAmountStr = "";
+    static bool waitingForAmount = false;
+
     if (Serial.available() > 0) {
-        String input = Serial.readStringUntil('\n');
-        input.trim(); // 앞뒤 공백 제거
-
-        if (input.equalsIgnoreCase("TEST")) {
-            Serial.println("▶ 즉시 급식 테스트를 시작합니다.");
-            Serial.print("▷ 급식할 양(g)을 입력하고 Enter를 누르세요: ");
-
-            // 사용자가 양을 입력할 때까지 대기
-            while (Serial.available() == 0) {
-                delay(100); // CPU 자원을 너무 많이 사용하지 않도록 잠시 대기
-            }
-
-            String amountStr = Serial.readStringUntil('\n');
-            amountStr.trim();
-            float amount = amountStr.toFloat();
-
-            if (amount > 0) {
-                Unit.testDispense(amount); // UnitTask의 테스트 함수 호출
-                Serial.println("▶ 테스트 완료. 정상 작동 모드로 돌아갑니다.");
+        char c = Serial.read();
+        
+        if (waitingForAmount) {
+            if (c == '\n' || c == '\r') {
+                float amount = inputAmountStr.toFloat();
+                if (amount > 0) {
+                    Unit.startTestDispense(amount); // 논블로킹 테스트 시작
+                } else {
+                    Serial.println("[오류] 잘못된 입력입니다.");
+                }
+                inputAmountStr = "";
+                waitingForAmount = false;
             } else {
-                Serial.println("[오류] 잘못된 입력입니다. 0보다 큰 숫자를 입력하세요.");
+                inputAmountStr += c;
+            }
+        } else {
+            if (c == 't' || c == 'T') {
+                Serial.println("\n▶ 즉시 급식 테스트 모드. 급식할 양(g)을 입력하고 Enter: ");
+                waitingForAmount = true;
+                inputAmountStr = "";
             }
         }
     }

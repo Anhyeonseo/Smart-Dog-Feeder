@@ -20,39 +20,8 @@ void UnitTask::begin() {
     scale.begin();
     feeder.begin();
     rfid.begin();
+    currentState = IDLE; // 초기 상태 설정
 }
-
-/**
- * @brief 지정된 양만큼 즉시 배식하고, RFID 문 개폐까지 테스트하는 함수.
- * 실제 급식 사이클(배식 -> 모니터링 -> 완료)을 시뮬레이션합니다.
- * @param amount 배식할 사료의 양 (g)
- */
-void UnitTask::testDispense(float amount) {
-    // 1. 테스트 시작 메시지 출력
-    Serial.printf("\n--- 즉시 급식 테스트 (목표: %.1fg) ---\n", amount);
-
-    // 2. 배식 단계 (run() 함수의 DISPENSING 상태와 동일)
-    feeder.dispense(amount, scale);
-    Serial.println("배식 완료. 식사 모니터링(RFID 문 개폐) 시뮬레이션을 시작합니다.");
-    Serial.println("인증된 RFID 태그를 리더기에 접촉하여 문을 열어주세요...");
-
-    // 3. 모니터링 단계 (run() 함수의 MONITORING 상태 시뮬레이션)
-    // rfid.scan()이 true(문이 닫힘)를 반환할 때까지 반복합니다.
-    while (true) {
-        bool mealFinished = rfid.scan();
-        if (mealFinished) {
-            Serial.println("식사 완료 감지 (문 닫힘).");
-            break; // 모니터링 루프 종료
-        }
-        delay(50); // 루프가 너무 빠르게 도는 것을 방지
-    }
-
-    // 4. 완료 및 결과 보고 단계
-    float finalWeight = scale.getWeightAvg(); // 최종 잔량 측정
-    Serial.printf("테스트 완료. 최종 측정된 잔량: %.1fg\n", finalWeight);
-    Serial.println("--------------------------------------\n");
-}
-
 
 // --- MQTT로부터 받은 JSON으로 스케줄을 설정하는 함수 ---
 void UnitTask::setTasksFromJson(String json) {
@@ -88,43 +57,78 @@ void UnitTask::setTasksFromJson(String json) {
 }
 
 /**
+ * @brief 지정된 양만큼 즉시 배식하고, RFID 문 개폐까지 테스트하는 함수.
+ * 실제 급식 사이클(배식 -> 모니터링 -> 완료)을 시뮬레이션합니다.
+ * @param amount 배식할 사료의 양 (g)
+ */
+void UnitTask::startTestDispense(float amount) {
+    if (currentState != IDLE) {
+        Serial.println("오류: 다른 작업이 진행 중일 때는 테스트를 시작할 수 없습니다.");
+        return;
+    }
+    Serial.printf("\n--- 즉시 급식 테스트 시작 (목표: %.1fg) ---\n", amount);
+    feeder.startDispense(amount, scale); // Feeder에게 배식 '시작'만 지시
+    currentState = DISPENSING;      // UnitTask의 상태를 '배식 중'으로 변경
+}
+
+/**
  * @brief 메인 실행 함수. 상태에 따라 급식, 모니터링, 완료 처리를 수행합니다.
  */
-void UnitTask::run(tm& current_Time) {
-    // 1. [IDLE 상태]: 평소 상태. 급식 시간이 되었는지 확인합니다.
-    if (currentState == IDLE) {
-        for (int i = 0; i < taskCount; i++) {
-            // 시간이 맞고, 아직 완료되지 않은 작업이라면
-            if (!taskDone[i] && current_Time.tm_hour == tasks[i].hour && current_Time.tm_min == tasks[i].minute) {
-                Serial.printf("스케줄 %d번 (ID: %ld) 실행 시작.\n", i, tasks[i].id);
-                currentTaskIndex = i;
-                currentState = DISPENSING; // 상태를 '배식 중'으로 변경
-                return; // 한 번에 하나의 작업만 처리
+void UnitTask::update(tm& current_Time) {
+
+    feeder.update(scale);
+
+    switch (currentState) {
+        case IDLE:
+            // 스케줄 시간이 되었는지 확인
+            for (int i = 0; i < taskCount; i++) {
+                if (!taskDone[i] && current_Time.tm_hour == tasks[i].hour && current_Time.tm_min == tasks[i].minute) {
+                    Serial.printf("스케줄 %d번 (ID: %ld) 실행 시작.\n", i, tasks[i].id);
+                    currentTaskIndex = i;
+                    feeder.startDispense(tasks[i].target_g, scale);
+                    currentState = DISPENSING;
+                    return; 
+                }
             }
-        }
-    }
 
-    // 2. [DISPENSING 상태]: 사료를 배식합니다.
-    if (currentState == DISPENSING) {
-        feeder.dispense(tasks[currentTaskIndex].target_g, scale);
-        Serial.println("배식 완료. 식사 모니터링을 시작합니다.");
-        currentState = MONITORING;
-    }
+            break;
+        case DISPENSING:
+            // Feeder가 배식을 다했는지 '상태'만 확인
+            if (feeder.getState() == Feeder::DONE || feeder.getState() == Feeder::STOPPED) {
+                feeder.resetState();
+                Serial.println("UnitTask: 배식 완료/중지 감지. 식사 모니터링 시작.");
+                currentState = MONITORING;
+                monitoringStartTime = millis(); // 모니터링 타임아웃 타이머 시작
+            }
+            break;
 
-    // 3. [MONITORING 상태]: 반려동물의 식사를 감지하고 완료 여부를 판단합니다.
-    if (currentState == MONITORING) {
-        // rfid.scan() 함수는 문이 방금 닫혔을 때만 true를 반환합니다.
-        bool mealFinished = rfid.scan(); 
+        case MONITORING:
+            // RFID 모듈이 문을 닫았는지 확인 (scan()이 true를 반환하면 닫힌 것)
+            bool mealFinished = rfid.scan(); 
 
-        if (mealFinished) {
-            Serial.println("식사 완료 감지.");
-            // --- 식사 완료 후 알림 전송을 위한 데이터 설정 ---
-            remainingWeight = scale.getWeightAvg(); // 최종 잔량 측정
-            completedTaskId = tasks[currentTaskIndex].id; // 완료된 스케줄의 ID 저장
-            mealCompletedFlag = true; // 메인 .ino 파일에 알리기 위한 플래그 설정
-            taskDone[currentTaskIndex] = true; // 현재 작업을 '완료'로 표시
-            currentState = IDLE;
-        }
+            if (mealFinished) { 
+                Serial.println("UnitTask: 식사 완료 감지 (문 닫힘).");
+                remainingWeight = scale.getWeightAvg();
+                if (currentTaskIndex != -1) { // testdispense를 위해 예외 상황 처리
+                    completedTaskId = tasks[currentTaskIndex].id;
+                    taskDone[currentTaskIndex] = true;
+                }
+                mealCompletedFlag = true;
+                currentState = IDLE;
+                currentTaskIndex = -1; // 현재 작업 인덱스 초기화
+                break;
+            }
+
+            // 모니터링 타임아웃 확인
+            if (millis() - monitoringStartTime > MONITORING_TIMEOUT_MS) {
+                Serial.println("경고: 식사 시간 초과! 작업을 강제로 종료합니다.");
+                // 문을 닫는 로직이 RFID 클래스 내부에 있으므로,
+                // RFID scan()이 계속 호출되면 알아서 닫힐 것입니다.
+                // 혹은 rfid.closeDoor() 같은 강제 닫기 함수를 만들 수도 있습니다.
+                currentState = IDLE;
+                currentTaskIndex = -1;
+            }
+            break;
     }
 }
 
