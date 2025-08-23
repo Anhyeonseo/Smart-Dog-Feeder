@@ -33,48 +33,50 @@ String RFID::convertUidToString() {
   
 bool RFID::scan() {
     unsigned long now = millis();
-
-    // ❶ 태그가 감지되고 UID 읽기에 성공하면…
-    if (reader_.PICC_IsNewCardPresent() && reader_.PICC_ReadCardSerial()) {
+    // 1) 같은 태그가 계속 있는 동안에도 주기적으로 true가 나오도록 ReadCardSerial()만 사용
+    if (reader_.PICC_ReadCardSerial()) {
         String tagID = convertUidToString();
-        
-        // (UID 문자열 빌드 + isInList 검사)
-        if (IsInList(tagID) && doorState_ == CLOSED) {
-            Serial.println("인증된 태그입니다: " + tagID);
-            doorServo_.write(90);
-            doorState_ = OPEN;
-            doorAngle_ = 90;
-            closetime_ = now + 5000;  // 5초 후에 닫기
-            reader_.PICC_HaltA();
-            return false; // 문이 열렸지만, 닫힌 것은 아니므로 false 반환
+
+        if (IsInList(tagID)) {
+            closetime_ = now + 5000;  // 필요하면 보유시간(ms) 조절
+
+            // 닫히는 중이거나 닫혀 있으면 즉시 연 상태로 전환
+            if (doorState_ != OPEN) {
+                Serial.println("인증된 태그 감지 → 문을 엽니다");
+                doorServo_.write(90);
+                doorAngle_ = 90;
+                doorState_ = OPEN;
+            }
+            return false; // 열린 상태 유지 중
         }
     }
 
-    // ❹ (위의 return을 만나지 않은 경우만) doorOpen == true, 닫기 시간 지나면 “닫기” 수행
+    // 2) 태그가 떠난 뒤 보유시간이 지나면 닫기 시작
     if (doorState_ == OPEN && now > closetime_) {
         Serial.println("문을 닫습니다...");
         doorState_ = CLOSING;
         lastStepTime_ = now;
     }
 
+    // 3) 점진적으로 닫기
     if (doorState_ == CLOSING) {
-        // 90도에서 0도로 천천히 닫기
         if (now - lastStepTime_ >= stepInterval_) {
             lastStepTime_ = now;
             doorAngle_ -= 10;
-            if (doorAngle_ < 0) {
-                doorAngle_ = 0;
-            }
+            if (doorAngle_ < 0) doorAngle_ = 0;
             doorServo_.write(doorAngle_);
+
             if (doorAngle_ == 0) {
                 Serial.println("문이 닫혔습니다...");
                 doorState_ = CLOSED;
-                return true;
+                return true;   // 닫힘
             }
         }
     }
-    return false; // 그 외의 경우는 모두 false 반환
+
+    return false; // 그 외의 경우
 }
+
 
 // refactoring : static 지역 변수 대신 멤버 변수로 doorOpen closetime을 사용하여
 //               객체 상태를 유지하도록 변경
