@@ -48,9 +48,9 @@ public:
 	float getDispensedAmount() const { return dispensedAmount; }
 
 private:
-	// uint8_t       stepPin;       // 스텝 제어 핀
-	// uint8_t       dirPin;        // 방향 제어 핀
-	// uint8_t		  enPin; // 모터 활성화 핀 (필요시 변경)
+	uint8_t       stepPin;       // 스텝 제어 핀
+	uint8_t       dirPin;        // 방향 제어 핀
+	uint8_t		  enPin; // 모터 활성화 핀 (필요시 변경)
 	unsigned long maxRunMs; // 최대 실행 시간(ms) 설정
 	AccelStepper stepper;       // AccelStepper 객체 생성
 	TMC2209Stepper tmcDriver; // TMC 드라이버 객체 생성

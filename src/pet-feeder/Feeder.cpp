@@ -6,7 +6,8 @@
 const unsigned long JAM_DETECT_DURATION_MS = 2000;
 
 Feeder::Feeder(uint8_t stepPin, uint8_t dirPin, uint8_t enPin, unsigned long timeoutMs)
-    : stepper(AccelStepper::DRIVER, stepPin, dirPin), maxRunMs(timeoutMs),
+    : stepPin(stepPin), dirPin(dirPin), enPin(enPin), maxRunMs(timeoutMs),
+      stepper(AccelStepper::DRIVER, stepPin, dirPin),
       tmcDriver(&Serial1, Config::FEEDER::R_SENSE, 0) {
         stepper.setEnablePin(enPin);
         stepper.setPinsInverted(false, false, true); // 스텝 모터 핀 반전 설정
@@ -16,6 +17,7 @@ void Feeder::begin() {
     Serial1.begin(115200);
     tmcDriver.begin();
     tmcDriver.microsteps(1); // 풀스텝 설정
+  
     // tmcDriver.rms_current(1000); // 모터 스펙에 맞는 전류 (mA)
 
     // // StallGuard 기능 활성화
@@ -72,6 +74,9 @@ void Feeder::update(WeightSensor& sensor) {
         return;
     } 
 
+//     const int baseStepSize = 400;     // 기본 배치 스텝 수
+//     const float threshold = 10;     // 목표까지 1g 이하로 남으면 정밀 모드
+
     sensor.update();
     stepper.run();
     
@@ -81,10 +86,16 @@ void Feeder::update(WeightSensor& sensor) {
             if (millis() - lastWeightCheckTime >= weightCheckInterval) {
                  lastWeightCheckTime = millis();
 
+
                // 2. 무게 체크 (블로킹)
                 float beforeDispensed = dispensedAmount;
                 dispensedAmount = sensor.getWeight() - startWeight; 
                 Serial.printf("  진행: %.1f g / %.1f g\n", dispensedAmount, targetGrams);
+
+//     while (millis() - startTime < maxRunMs) { //maxRunMs은 최대 실행 시간을 설정한거임
+//         // 배치 크기 결정 (가까워질수록 작게)
+//         int stepBatch = (targetGrams - dispensed > threshold) ? baseStepSize : 200;
+
 
                 // 목표 도달 시
                 if (dispensedAmount >= targetGrams) {
