@@ -8,7 +8,19 @@ void WeightSensor::begin() {
 	// 교정 인자 설정
 	scale.set_scale(calibrationFactor);
 	// 0점 조정
-	scale.tare();
+	scale.tare(20);
+}
+
+// 새로운 논블로킹 업데이트 함수
+void WeightSensor::update() {
+    if (scale.is_ready()) {
+        currentWeight = scale.get_units(1);
+    }
+}
+
+// 새로운 논블로킹 값 반환 함수
+float WeightSensor::getWeight() {
+    return currentWeight;
 }
 
 // 샘플 수 지정하여 평균 무게(그램) 반환

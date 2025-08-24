@@ -68,7 +68,7 @@ void loop() {
   Serial.print("Weight: ");
   Serial.print(weight, 2);
   Serial.print("DEBUG RAW read = ");
-  Serial.println(scale.read());
+  Serial.println(scale.read()); 
   Serial.println(" g");
   delay(500);
 }

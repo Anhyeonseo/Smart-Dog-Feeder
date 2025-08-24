@@ -1,17 +1,10 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-struct FeedTask {
-    long id;             // 스케쥴 고유 ID
-    uint8_t hour;        // 시간
-    uint8_t minute;      // 분
-    float target_g;      // 목표 무게 (그램 단위)
-};
-
 namespace Config { //공통 사용 설정
     namespace WIFI {
-        static const char* SSID     = "SK_WiFiGIGAE498_2.4G";       // WiFi SSID
-        static const char* PASSWORD = "1704017757";   // WiFi 비밀번호
+        static const char* SSID     = "";       // WiFi SSID
+        static const char* PASSWORD = "";   // WiFi 비밀번호
     }
 
     // --- MQTT 설정 추가 ---
@@ -19,7 +12,7 @@ namespace Config { //공통 사용 설정
         static const char* SERVER   = "58870451efe34c9f83dece69cbf72f38.s1.eu.hivemq.cloud";
         static constexpr int PORT   = 8883;
         static const char* USER     = "feeder01";
-        static const char* PASSWORD = "Zxasqwgg248~"; // 비밀번호 확인
+        static const char* PASSWORD = ""; // 비밀번호 확인
 
         static const char* TOPIC_COMMAND  = "feeder/ESP_FEEDER_01/command";
         static const char* TOPIC_STATUS   = "feeder/ESP_FEEDER_01/status";
@@ -37,18 +30,11 @@ namespace Config { //공통 사용 설정
     }
 }
 
-namespace FirstUnit {
-            
-    static constexpr FeedTask TASKS[] = {
-        {8, 0, 120},   // 오전 8시, 120g
-        // {22, 00, 80}   // 오후 6시 30분, 80g
-    }; 
-    // 이거 없애야함.
- 
+namespace FirstUnit { 
 
     static constexpr uint8_t WEIGHT_DOUT_PIN   = 4;
     static constexpr uint8_t WEIGHT_SCK_PIN    = 15;
-    static constexpr float   WEIGHT_CAL_FACTOR = 3300;
+    static constexpr float   WEIGHT_CAL_FACTOR = 3290;
 
     static constexpr uint8_t RFID_SS_PIN    = 5;
     static constexpr uint8_t RFID_RST_PIN   = 17;
