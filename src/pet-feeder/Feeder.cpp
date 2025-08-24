@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────────────────────
 #include "Feeder.h"
 
+const unsigned long JAM_DETECT_DURATION_MS = 2000;
 
 Feeder::Feeder(uint8_t stepPin, uint8_t dirPin, uint8_t enPin, unsigned long timeoutMs)
     : stepper(AccelStepper::DRIVER, stepPin, dirPin), maxRunMs(timeoutMs),
@@ -53,6 +54,8 @@ void Feeder::startDispense(float targetgrams, WeightSensor& sensor) {
     this->targetGrams = targetgrams;
     this->startWeight = sensor.getWeightAvg(10); // getWeightAvg() 블로킹함수이기에 시작 시 한번만 호출
     this->dispensedAmount = 0;
+
+    this->isPotentiallyJammed = false; 
 
     stepper.enableOutputs(); // 모터 출력을 활성화
     stepper.move(200000); // 아주 먼 목표 설정 (계속 회전하도록)
@@ -109,22 +112,53 @@ void Feeder::update(WeightSensor& sensor) {
              
                 // 2. 사료 걸림 감지 로직 (무게 변화량 기반)
                 // dispensedAmount가 0보다 클 때만 (초반 오류 방지)
-                if (dispensedAmount > 0 && abs(dispensedAmount - beforeDispensed) < 0.1) {
-                    Serial.println("\nFeeder: 사료 걸림 감지! 반대 회전 실행...");
-                    currentState = REVERSING;
-                    // 1. 현재 움직임을 멈추고 감속을 시작하도록 명령
-                    stepper.stop();
-            
-                    // 2. 현재 위치를 0으로 리셋하여 기존 목표를 잊게 만듦
-                    stepper.setCurrentPosition(0);
-                    stepper.move(-800); // 반대 방향으로 이동
-                    break;
+                bool weightStalled = (dispensedAmount > 0.5 && abs(dispensedAmount - beforeDispensed) < 0.1);
+
+                if (weightStalled) {
+                    // 2. 이전에 의심 상태가 아니었다면, 타이머 시작
+                    if (!isPotentiallyJammed) {
+                        isPotentiallyJammed = true;
+                        jamDetectStartTime = millis();
+                        Serial.println("\nFeeder: 사료 걸림 의심. 3초 카운트 시작...");
+                    }
+                    // 3. 이미 의심 상태였다면, 시간이 3초를 넘었는지 확인
+                    else {
+                        if (millis() - jamDetectStartTime >= JAM_DETECT_DURATION_MS) {
+                            Serial.println("\nFeeder: 사료 걸림 확정! 반대 회전 실행...");
+                            
+                            stepper.stop();
+                            stepper.setCurrentPosition(0);
+                            stepper.move(-2000);
+                            
+                            currentState = Feeder::REVERSING;
+                            isPotentiallyJammed = false; // 상태 전환 후 리셋
+                            break;
+                        }
+                    }
+                } 
+                // 4. 무게가 다시 변하기 시작했다면 (걸림이 아니었음), 의심 상태 해제
+                else {
+                    if (isPotentiallyJammed) {
+                        Serial.println("\nFeeder: 사료 걸림 의심 해제. 정상 작동.");
+                    }
+                    isPotentiallyJammed = false;
                 }
             }
             break;
         }
-        
+
         case REVERSING: {
+            // 이 상태의 유일한 목적은 loop 한 바퀴를 그냥 보내는 것입니다.
+            // 이 루프의 시작점에서 stepper.run()이 호출되면서
+            // 모터가 확실히 움직이기 시작하고 isRunning()이 true가 됩니다.
+            Serial.println("[N+1] Feeder: 모터 실행 보장. 완료 확인 단계로 전환.");
+
+            // 3. '완료 확인' 상태로 전환
+            currentState = REVERSING_DONE;
+            break;
+        }
+        
+        case REVERSING_DONE: {
             // 사료 걸림 감지 시 반대 회전
             
             if (!(stepper.isRunning())) {

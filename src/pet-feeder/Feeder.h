@@ -18,6 +18,7 @@ public:
 		DISPENSING,   // 모터회전상태
 		// DISPENSING_PAUSE,   // 배식 중 무게측정
 		REVERSING,    // 사료 걸림 감지 시, 반대 회전
+		REVERSING_DONE,
 		DONE,      	  // 작업 상태
 		STOPPED       // 중지 상태
 	};
@@ -63,6 +64,8 @@ private:
 	// 타이머 변수
 	unsigned long lastWeightCheckTime; // 마지막 무게 측정 시간
 	const int weightCheckInterval = 1000; // 무게 측정 간격 (1초)
+	bool isPotentiallyJammed = false;       // 현재 사료 걸림이 '의심'되는 상태인지 기억
+  unsigned long jamDetectStartTime = 0; // '의심'이 시작된 시간을 기록
 };
 
 #endif // FEEDER_H
