@@ -3,7 +3,6 @@
 // ─────────────────────────────────────────────────────────────────────────
 #include "Feeder.h"
 
-const unsigned long JAM_DETECT_DURATION_MS = 2000;
 
 Feeder::Feeder(uint8_t stepPin, uint8_t dirPin, uint8_t enPin, unsigned long timeoutMs)
     : stepPin(stepPin), dirPin(dirPin), enPin(enPin), maxRunMs(timeoutMs),
@@ -11,23 +10,25 @@ Feeder::Feeder(uint8_t stepPin, uint8_t dirPin, uint8_t enPin, unsigned long tim
       tmcDriver(&Serial1, Config::FEEDER::R_SENSE, 0) {
         stepper.setEnablePin(enPin);
         stepper.setPinsInverted(false, false, true); // 스텝 모터 핀 반전 설정
-      }
-
+     }
+    
 void Feeder::begin() {
     Serial1.begin(115200);
     tmcDriver.begin();
-    tmcDriver.microsteps(1); // 풀스텝 설정
   
-    // tmcDriver.rms_current(1000); // 모터 스펙에 맞는 전류 (mA)
+      // 1. 토크: 1000mA (1.0A)로 설정. 최대 1200mA까지 가능.
+    tmcDriver.rms_current(1000); 
 
-    // // StallGuard 기능 활성화
-    // tmcDriver.TCOOLTHRS(20);
-    // tmcDriver.en_spreadCycle(true);
-    // tmcDriver.TCOOLTHRS(500);
-    // tmcDriver.SGTHRS(100); // 0~255
+    // 2. 마이크로스텝: 16으로 유지 (부드러움)
+    tmcDriver.microsteps(16);
+    
+    // 3. 모드: SpreadCycle로 설정하여 토크 극대화 (약간의 소음 증가)
+    tmcDriver.en_spreadCycle(true);
+    
+    // 4. 속도/가속도: 중간 값에서 시작
+    stepper.setMaxSpeed(1500); 
+    stepper.setAcceleration(750);
 
-    stepper.setMaxSpeed(1000);          
-    stepper.setAcceleration(500);
     stepper.disableOutputs(); // 모터 출력을 비활성화하여 초기 상태로 설정
     currentState = IDLE; // 초기 상태를 IDLE로 설정
 
@@ -73,9 +74,6 @@ void Feeder::update(WeightSensor& sensor) {
     if (currentState == IDLE || currentState == STOPPED || currentState == DONE ) { 
         return;
     } 
-
-//     const int baseStepSize = 400;     // 기본 배치 스텝 수
-//     const float threshold = 10;     // 목표까지 1g 이하로 남으면 정밀 모드
 
     sensor.update();
     stepper.run();
@@ -181,7 +179,6 @@ void Feeder::update(WeightSensor& sensor) {
         }
     }
 }
-
 void Feeder::stop() {
     stepper.stop(); 
     stepper.disableOutputs(); 

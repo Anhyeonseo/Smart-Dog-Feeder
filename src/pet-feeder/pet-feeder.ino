@@ -15,7 +15,7 @@
 UnitTask Unit(
     FirstUnit::WEIGHT_DOUT_PIN, FirstUnit::WEIGHT_SCK_PIN, FirstUnit::WEIGHT_CAL_FACTOR,
     FirstUnit::FEEDER_MOTOR_STEP, FirstUnit::FEEDER_MOTOR_DIR, FirstUnit::FEEDER_MOTOR_EN, FirstUnit::FEEDER_MAX_RUN_MS,
-    FirstUnit::RFID_SS_PIN, FirstUnit::RFID_RST_PIN, FirstUnit::RFID_SERVO_PIN, FirstUnit::AUTH_TAG
+    FirstUnit::RFID_SS_PIN, FirstUnit::RFID_RST_PIN, FirstUnit::RFID_SERVO_PIN, FirstUnit::AUTH_TAG, FirstUnit::BUTTON_PIN
 );
 
 unsigned long lastSecondTaskTime = 0;
