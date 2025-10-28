@@ -9,7 +9,7 @@
 
 WiFiClientSecure secureClient;
 PubSubClient     client(secureClient);
-Preferences      preferences;
+Preferences preferences;
 
 // extern Preferences preferences; // ino파일에서 정의된 Preferences 객체 가져오기 (더미 데이터 삭제 시)
 

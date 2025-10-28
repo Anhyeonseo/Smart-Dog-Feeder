@@ -20,6 +20,8 @@ public:
 
 	// 샘플 수 지정하여 평균 무게(그램) 반환
 	float getWeightAvg(uint8_t samples = 5);
+	
+	void setCurrentWeight();	
 
 private:
 	HX711   scale;

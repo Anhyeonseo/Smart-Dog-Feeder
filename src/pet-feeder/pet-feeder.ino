@@ -15,7 +15,7 @@
 UnitTask Unit(
     FirstUnit::WEIGHT_DOUT_PIN, FirstUnit::WEIGHT_SCK_PIN, FirstUnit::WEIGHT_CAL_FACTOR,
     FirstUnit::FEEDER_MOTOR_STEP, FirstUnit::FEEDER_MOTOR_DIR, FirstUnit::FEEDER_MOTOR_EN, FirstUnit::FEEDER_MAX_RUN_MS,
-    FirstUnit::RFID_SS_PIN, FirstUnit::RFID_RST_PIN, FirstUnit::RFID_SERVO_PIN, FirstUnit::AUTH_TAG
+    FirstUnit::RFID_SS_PIN, FirstUnit::RFID_RST_PIN, FirstUnit::RFID_SERVO_PIN, FirstUnit::AUTH_TAG, FirstUnit::BUTTON_PIN
 );
 
 unsigned long lastSecondTaskTime = 0;
@@ -23,10 +23,10 @@ unsigned long lastSecondTaskTime = 0;
 void setup() {
     Serial.begin(115200); // 디버깅을 위한 시리얼 통신 초기화
 
-    // preferences.begin("feeder_settings", false);
-    // preferences.clear(); // "feeder_settings" 공간의 모든 데이터를 삭제합니다.
-    // preferences.end();
-    // Serial.println("\n!!! 내부 메모리(Preferences)가 초기화되었습니다. !!!\n");
+//    preferences.begin("feeder_settings", false);
+//    preferences.clear(); // "feeder_settings" 공간의 모든 데이터를 삭제합니다.
+//    preferences.end();
+//    Serial.println("\n!!! 내부 메모리(Preferences)가 초기화되었습니다. !!!\n");
 
     WiFi.begin(Config::WIFI::SSID, Config::WIFI::PASSWORD); // WiFi 연결
     
