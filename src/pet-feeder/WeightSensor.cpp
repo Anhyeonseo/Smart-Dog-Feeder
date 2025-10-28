@@ -23,6 +23,14 @@ float WeightSensor::getWeight() {
     return currentWeight;
 }
 
+void WeightSensor::setCurrentWeight() {
+	if(!scale.is_ready()) {
+		Serial.println("HX711 not found.");
+		return;
+	}
+	currentWeight = scale.get_units(5);
+}
+
 // 샘플 수 지정하여 평균 무게(그램) 반환
 float WeightSensor::getWeightAvg(uint8_t samples) {
 	return scale.get_units(samples);

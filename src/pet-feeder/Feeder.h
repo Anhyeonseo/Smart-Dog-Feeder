@@ -40,7 +40,7 @@ public:
 	// 현재 상태 반환 함수
 	FeederState getState() const { return currentState; }
 
-	void resetState(); 
+	void resetState(WeightSensor& sensor); 
 
 	// 현재 배식된 양 반환 함수
 	float getDispensedAmount() const { return dispensedAmount; }
@@ -61,10 +61,10 @@ private:
 
 	// 타이머 변수
 	unsigned long lastWeightCheckTime; // 마지막 무게 측정 시간
-	const int weightCheckInterval = 1000; // 무게 측정 간격 (1초)
+	const int weightCheckInterval = 750; // 무게 측정 간격 (1초)
 	bool isPotentiallyJammed = false;       // 현재 사료 걸림이 '의심'되는 상태인지 기억
-  	unsigned long jamDetectStartTime = 0; // '의심'이 시작된 시간을 기록
-	const unsigned long JAM_DETECT_DURATION_MS = 3000;
+  unsigned long jamDetectStartTime = 0; // '의심'이 시작된 시간을 기록
+	const unsigned long JAM_DETECT_DURATION_MS = 1500;
 };
 
 #endif // FEEDER_H

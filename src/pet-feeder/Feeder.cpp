@@ -23,13 +23,14 @@ void Feeder::begin() {
     tmcDriver.microsteps(16);
     
     // 3. 모드: SpreadCycle로 설정하여 토크 극대화 (약간의 소음 증가)
-    tmcDriver.en_spreadCycle(true);
+    tmcDriver.en_spreadCycle(false);
     
     // 4. 속도/가속도: 중간 값에서 시작
-    stepper.setMaxSpeed(1500); 
-    stepper.setAcceleration(750);
+    stepper.setMaxSpeed(2000); 
+    stepper.setAcceleration(1000);
 
     stepper.disableOutputs(); // 모터 출력을 비활성화하여 초기 상태로 설정
+    // stepper.enableOutputs(); // 모터 출력을 활성화
     currentState = IDLE; // 초기 상태를 IDLE로 설정
 
     Serial.println("스텝모터 준비 완료");
@@ -54,14 +55,21 @@ void Feeder::startDispense(float targetgrams, WeightSensor& sensor) {
 
     Serial.printf("급식 시작: 목표 %.1f g\n", targetgrams);
     
-    this->targetGrams = targetgrams;
-    this->startWeight = sensor.getWeightAvg(10); // getWeightAvg() 블로킹함수이기에 시작 시 한번만 호출
-    this->dispensedAmount = 0;
+    // startweight 잔량 무게
+    // this->startWeight = sensor.getWeightAvg(5); // getWeightAvg() 블로킹함수이기에 시작 시 한번만 호출
+    // 실제 배식해야하는 무게
+    // this->targetGrams = targetgrams - startWeight;
+    targetGrams = targetgrams;
+    // delay(50); // 센서 안정화 대기
+    sensor.setCurrentWeight(); // 현재 실제 무게로 초기화
+
+    // 다시 한번 초기화
+    this->dispensedAmount = 0; // 무게 저장 변수 초기화
 
     this->isPotentiallyJammed = false; 
 
     stepper.enableOutputs(); // 모터 출력을 활성화
-    stepper.move(200000); // 아주 먼 목표 설정 (계속 회전하도록)
+    stepper.move(999999); // 아주 먼 목표 설정 (계속 회전하도록)
     currentState = DISPENSING;  
 }
 
@@ -75,7 +83,7 @@ void Feeder::update(WeightSensor& sensor) {
         return;
     } 
 
-    sensor.update();
+    // sensor.update();
     stepper.run();
     
     switch (currentState) {
@@ -87,7 +95,8 @@ void Feeder::update(WeightSensor& sensor) {
 
                // 2. 무게 체크 (블로킹)
                 float beforeDispensed = dispensedAmount;
-                dispensedAmount = sensor.getWeight() - startWeight; 
+                // dispensedAmount = sensor.getWeight() - startWeight;
+                dispensedAmount = sensor.getWeightAvg(1);
                 Serial.printf("  진행: %.1f g / %.1f g\n", dispensedAmount, targetGrams);
 
 //     while (millis() - startTime < maxRunMs) { //maxRunMs은 최대 실행 시간을 설정한거임
@@ -128,16 +137,16 @@ void Feeder::update(WeightSensor& sensor) {
                     if (!isPotentiallyJammed) {
                         isPotentiallyJammed = true;
                         jamDetectStartTime = millis();
-                        Serial.println("\nFeeder: 사료 걸림 의심. 3초 카운트 시작...");
+                        Serial.println("\nFeeder: 사료 걸림 의심. 1.5초 카운트 시작...");
                     }
-                    // 3. 이미 의심 상태였다면, 시간이 3초를 넘었는지 확인
+                    // 3. 이미 의심 상태였다면, 시간이 1.5초를 넘었는지 확인
                     else {
                         if (millis() - jamDetectStartTime >= JAM_DETECT_DURATION_MS) {
                             Serial.println("\nFeeder: 사료 걸림 확정! 반대 회전 실행...");
                             
                             stepper.stop();
                             stepper.setCurrentPosition(0);
-                            stepper.move(-2000);
+                            stepper.move(-1500);
                             
                             currentState = Feeder::REVERSING;
                             isPotentiallyJammed = false; // 상태 전환 후 리셋
@@ -173,7 +182,7 @@ void Feeder::update(WeightSensor& sensor) {
             if (!(stepper.isRunning())) {
                 Serial.println("Feeder: 사료 걸림 감지, 반대 회전 완료");
                 currentState = DISPENSING; // 다시 배식 상태로 변경
-                stepper.move(200000); // 다시 정방향 
+                stepper.move(999999); // 다시 정방향 
             }
             break;
         }
@@ -186,6 +195,7 @@ void Feeder::stop() {
     Serial.println("Feeder: 급식 중지");
 }
 
-void Feeder::resetState() {
+void Feeder::resetState(WeightSensor& sensor) {
     currentState = IDLE;
+    dispensedAmount = 0;
 }

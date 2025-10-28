@@ -47,6 +47,7 @@ private:
     int doorAngle_ = 0; // 0=닫힘, 90=완전 개방
     bool justClosed_ = false;
     bool closeLogArmed_ = true;
+    
     // --- 타이밍
     unsigned long lastStepTime_ = 0;
     static constexpr unsigned long stepIntervalMs_ = 20; // 서보 각도 1스텝 간격

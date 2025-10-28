@@ -22,11 +22,6 @@ struct FeedTask {
 
 class UnitTask {
 public:
-    enum UnitState {
-        IDLE,         // 대기 상태(스케줄 대기)
-        DISPENSING,   // 배식 중(스케줄 실행 중)
-        MONITORING    // RFID 인식 대기/식사 감지 중
-    };
 
     UnitTask(
         uint8_t doutPin, uint8_t sckPin, float calFactor,
@@ -53,7 +48,13 @@ private:
     RFID         rfid;
     WeightSensor scale;
 
-    UnitState currentState = IDLE;
+    enum UnitState {
+        IDLE,         // 대기 상태(스케줄 대기)
+        DISPENSING,   // 배식 중(스케줄 실행 중)
+        MONITORING    // RFID 인식 대기/식사 감지 중
+    };
+    
+    UnitState unitstate_;
 
     FeedTask* tasks = nullptr;
     bool*     taskDone = nullptr;

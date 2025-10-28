@@ -21,7 +21,7 @@ void UnitTask::begin() {
     scale.begin();
     feeder.begin();
     rfid.begin();
-    currentState = IDLE;
+    unitstate_ = IDLE;
 
     if (buttonPin_ != 255) {
         pinMode(buttonPin_, INPUT_PULLUP);
@@ -62,16 +62,16 @@ void UnitTask::setTasksFromJson(String json) {
 }
 
 /**
- * @brief 지정된 양만큼 즉시 배식하고, RFID 문 개폐까지 테스트
+ * @brief 즉시 테스트 배식을 시작하는 함수
  */
 void UnitTask::startTestDispense(float amount) {
-    if (currentState != IDLE) {
+    if (unitstate_ != IDLE) {
         Serial.println("오류: 다른 작업이 진행 중일 때는 테스트를 시작할 수 없습니다.");
         return;
     }
     Serial.printf("\n--- 즉시 급식 테스트 시작 (목표: %.1fg) ---\n", amount);
     feeder.startDispense(amount, scale);
-    currentState = DISPENSING;
+    unitstate_ = DISPENSING;
 }
 
 // --- 메인 실행 함수 -------------------------------------------------------
@@ -83,7 +83,7 @@ void UnitTask::update(tm& current_Time) {
     handleButton_();
 
     // 2) 상태별 처리
-    switch (currentState) {
+    switch (unitstate_) {
         case IDLE:        handleIdle_(current_Time);       break;
         case DISPENSING:  handleDispensing_();             break;
         case MONITORING:  handleMonitoring_();             break;
@@ -107,7 +107,7 @@ void UnitTask::handleIdle_(tm& current_Time) {
             currentTaskIndex = i;
             rfid.resetRFIDSession();
             feeder.startDispense(tasks[i].target_g, scale);
-            currentState = DISPENSING;
+            unitstate_ = DISPENSING;
             return;
         }
     }
@@ -121,10 +121,10 @@ void UnitTask::handleIdle_(tm& current_Time) {
 void UnitTask::handleDispensing_() {
     // 버튼은 DISPENSING에서 무시됨 (handleButton_에서 필터링)
     if (feeder.getState() == Feeder::DONE || feeder.getState() == Feeder::STOPPED) {
-        feeder.resetState();
+        feeder.resetState(scale);
         Serial.println("UnitTask: 배식 완료/중지 감지. 식사 모니터링 시작.");
         rfid.beginMonitoring();
-        currentState = MONITORING;
+        unitstate_ = MONITORING;
         monitoringStartTime = millis();
     }
 }
@@ -142,7 +142,7 @@ void UnitTask::handleMonitoring_() {
             taskDone[currentTaskIndex] = true;
         }
         mealCompletedFlag = true;
-        currentState = IDLE;
+        unitstate_ = IDLE;
         currentTaskIndex = -1;
         return;
     }
@@ -150,7 +150,7 @@ void UnitTask::handleMonitoring_() {
     // 타임아웃
     if (millis() - monitoringStartTime > MONITORING_TIMEOUT_MS) {
         Serial.println("경고: 식사 시간 초과! 작업을 강제로 종료합니다.");
-        currentState = IDLE;
+        unitstate_ = IDLE;
         currentTaskIndex = -1;
     }
 }
@@ -159,7 +159,7 @@ void UnitTask::handleMonitoring_() {
 void UnitTask::handleButton_() {
     if (buttonPin_ == 255) return;   // 버튼 미사용
     // DISPENSING(배식 중)에는 버튼 동작 '무시'
-    if (currentState != IDLE) return;
+    if (unitstate_ != IDLE) return;
 
     int reading = digitalRead(buttonPin_);
     unsigned long now = millis();
