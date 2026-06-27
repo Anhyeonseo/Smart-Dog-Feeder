@@ -112,7 +112,7 @@ RC522는 초기 프로토타입 제작에는 적합했지만, 실제 제품 수�
 
 #### 문 개폐용 서보모터
 
-* 사용 부품: **SG60 Servo Motor**
+* 사용 부품: **SG90 Servo Motor**
 * 목적: RFID 인식 후 해당 개체에게만 급식 공간 개방
 * 요구 조건: 급식기 도어의 무게를 안정적으로 열고 닫을 수 있는 토크 확보
 
@@ -388,7 +388,6 @@ ILLO는 사료 배출 방식으로 **Auger Screw** 구조를 사용했습니다.
 
 ```markdown
 ![제품 모델링 1](./images/modeling_1.png)
-![제품 모델링 2](./images/modeling_2.png)
 ![제품 렌더링](./images/rendering.png)
 ```
 
