@@ -203,11 +203,11 @@ ILLO는 여러 부품이 서로 다른 전압을 요구하기 때문에 전원 �
 
 #### 회로 테스트 이미지
 
-```markdown
+
 ![회로 테스트 1](./images/hardware_test_1.png)
 ![회로 테스트 2](./images/hardware_test_2.png)
 ![PCB 설계](./images/pcb_design.png)
-```
+
 
 ---
 
@@ -386,10 +386,10 @@ ILLO는 사료 배출 방식으로 **Auger Screw** 구조를 사용했습니다.
 
 ### 8.7 모델링 이미지
 
-```markdown
+
 ![제품 모델링 1](./images/modeling_1.png)
 ![제품 렌더링](./images/rendering.png)
-```
+
 
 ---
 
