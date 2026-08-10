@@ -1,6 +1,6 @@
 # MQTT 프로토콜
 
-애플리케이션과 급식기는 MQTT Broker를 통해 통신합니다. 토픽은 장치 ID별로 분리합니다.
+앱은 서버 API를 통해 데이터를 주고받고, 서버와 급식기는 MQTT Broker를 통해 통신합니다. 토픽은 장치 ID별로 분리합니다.
 
 ```text
 illo/{deviceId}/command
@@ -50,4 +50,3 @@ illo/{deviceId}/status
   "timestamp": "2026-06-27T08:15:00"
 }
 ```
-
