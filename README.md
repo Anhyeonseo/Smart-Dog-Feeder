@@ -34,8 +34,8 @@ ESP32 DevKit V4, Arduino, C++, RC522 RFID, HX711 Load Cell, NEMA 17, TMC2209, SG
 
 | 역할 | 구성원 |
 | --- | --- |
-| Hardware | 김기범, 신현우, 이재호 |
-| Firmware | 김기범, 신현우 |
-| Design & Modeling | 서현우, 이재호 |
-| Networking | 박상민 |
-| Application | 고시영, 박상민 |
+| Hardware | 김기범, 안현서, 허재원 |
+| Firmware | 김기범, 안현서 |
+| Design & Modeling | 허재원, 하채연 |
+| Networking | 박상현 |
+| Application | 고시온 |
